@@ -37,7 +37,9 @@
        | "bool"         => Parser.BOOL pos
        | "char"         => Parser.CHAR pos
        | "fun"          => Parser.FUN pos
-
+       | "iota"         => Parser.IOTA pos
+       | "and"          => Parser.AND pos
+       | "or"           => Parser.OR pos
 (* specials: *)
        | "read"         => Parser.READ pos
        | "write"        => Parser.WRITE pos
