@@ -1,2 +1,10 @@
 /make
 \#*#
+
+# compile time files
+*.ui
+*.uo
+*.exe
+Lexer.sml
+Parser.sig
+Parser.sml
