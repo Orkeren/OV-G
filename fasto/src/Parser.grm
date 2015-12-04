@@ -10,7 +10,7 @@ open Fasto.UnknownTypes
 %token <string*(int*int)> ID STRINGLIT
 %token <int*(int*int)> NUM
 %token <char*(int*int)> CHARLIT
-%token <(int*int)> PLUS MINUS DEQ EQ LTH AND OR
+%token <(int*int)> PLUS MINUS DEQ EQ LTH AND OR TIMES DIVIDE
 %token <(int*int)> LPAR RPAR LBRACKET RBRACKET LCURLY RCURLY
 %token <(int*int)> COMMA
 %token <(int*int)> FUN READ WRITE IOTA
