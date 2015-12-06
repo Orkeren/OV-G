@@ -35,11 +35,10 @@
        | "in"           => Parser.IN pos
        | "int"          => Parser.INT pos
        | "bool"         => Parser.BOOL pos
+       | "not"          => Parser.NOT pos
        | "char"         => Parser.CHAR pos
        | "fun"          => Parser.FUN pos
        | "iota"         => Parser.IOTA pos
-       | "and"          => Parser.AND pos
-       | "or"           => Parser.OR pos
 (* specials: *)
        | "read"         => Parser.READ pos
        | "write"        => Parser.WRITE pos
@@ -77,6 +76,8 @@ rule Token = parse
   | `-`                 { Parser.MINUS  (getPos lexbuf) }
   | `*`                 { Parser.TIMES  (getPos lexbuf) }
   | `/`                 { Parser.DIVIDE (getPos lexbuf) }
+  | "&&"                { Parser.AND    (getPos lexbuf) }
+  | "||"                { Parser.OR     (getPos lexbuf) }
   | "=="                { Parser.DEQ    (getPos lexbuf) }
   | `=`                 { Parser.EQ     (getPos lexbuf) }
   | `<`                 { Parser.LTH    (getPos lexbuf) }
