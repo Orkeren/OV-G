@@ -130,8 +130,8 @@ and checkExp ftab vtab (exp : In.Exp)
     | In.Not (e, pos)
       => let val t = Bool
              val (t1, e_dec) = checkExp ftab vtab e
-         in  if t = Bool
-             then (Bool, Out.Not (e_dec, pos))
+         in  if t = t1
+             then (t1, Out.Not (e_dec, pos))
              else raise Error ("In Not: types not equal "^ppType t^" and "^ppType t1, pos)
          end
 

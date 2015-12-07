@@ -259,7 +259,7 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
             fun range x ys = if (0 > x) then ys else range (x - 1) (x::ys)
         in case (iotv) of
                 IntVal n => ArrayVal (map IntVal (range n []), Int)
-           | _ => raise Fail "Fisk"
+           | _ => raise Fail "Iota function on non-integer arg"
         end
 
   | evalExp ( Map (farg, arrexp, _, _, pos), vtab, ftab ) =

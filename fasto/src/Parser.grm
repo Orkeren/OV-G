@@ -16,11 +16,11 @@ open Fasto.UnknownTypes
 %token <(int*int)> FUN READ WRITE IOTA NOT
 
 %nonassoc ifprec letprec
-%left OR
-%left AND
+%left AND OR
 %left DEQ LTH
 %left PLUS MINUS
 %left TIMES DIVIDE
+%left NOT
 
 %start Prog
 %type <Fasto.UnknownTypes.Prog> Prog
