@@ -10,6 +10,7 @@ open Fasto.UnknownTypes
 %token <string*(int*int)> ID STRINGLIT
 %token <int*(int*int)> NUM
 %token <char*(int*int)> CHARLIT
+%token <bool*(int*int)> BOOLLIT
 %token <(int*int)> IOTA NOT NEGATE
 %token <(int*int)> PLUS MINUS DEQ EQ LTH AND OR TIMES DIVIDE
 %token <(int*int)> LPAR RPAR LBRACKET RBRACKET LCURLY RCURLY
@@ -60,6 +61,7 @@ Params : Type ID COMMA Params
 
 Exp :     NUM            { Constant (IntVal (#1 $1), #2 $1) }
         | CHARLIT        { Constant (CharVal (#1 $1), #2 $1) }
+        | BOOLLIT        { Constant (BoolVal (#1 $1), #2 $1) }
         | ID             { Var $1 }
         | STRINGLIT      { StringLit $1 }
         | LCURLY Exps RCURLY

@@ -39,6 +39,8 @@
        | "char"         => Parser.CHAR pos
        | "fun"          => Parser.FUN pos
        | "iota"         => Parser.IOTA pos
+       | "true"         => Parser.BOOLLIT (true, pos)
+       | "false"        => Parser.BOOLLIT (false, pos)
 (* specials: *)
        | "read"         => Parser.READ pos
        | "write"        => Parser.WRITE pos
