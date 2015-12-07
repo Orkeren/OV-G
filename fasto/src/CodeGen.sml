@@ -393,9 +393,25 @@ fun compileExp e vtable place =
       end
 
   | And (e1, e2, pos) =>
-    raise Fail "Unimplemented feature &&"
+      let val t1 = newName "and_L"
+          val t2 = newName "and_R"
+          val code1 = compileExp e1 vtable t1
+          val code2 = compileExp e2 vtable t2
+          val falseLabel = newName "false"
+          val trueLabel = newName "true"
+      in  code1 @ code2 @
+          [Mips.AND (place,t1,t2)]
+      end
   | Or (e1, e2, pos) =>
-    raise Fail "Unimplemented feature ||"
+      let val t1 = newName "or_L"
+          val t2 = newName "or_R"
+          val code1 = compileExp e1 vtable t1
+          val code2 = compileExp e2 vtable t2
+          val falseLabel = newName "false"
+          val trueLabel = newName "true"
+      in  code1 @ code2 @
+          [Mips.OR (place,t1,t2)]
+      end
 
   (* Indexing:
      1. generate code to compute the index
