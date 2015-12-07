@@ -248,7 +248,16 @@ fun compileExp e vtable place =
       end
       
   | Not (e', pos) =>
-    raise Fail "Unimplemented feature not"
+      let val t1 = newName "not_E"
+          val code1 = compileExp e' vtable t1
+          val falseLabel = newName "false"
+          val trueLabel = newName "true"
+      in  code1 @
+          [ Mips.LI (place,"1")
+          , Mips.BNE (t1,"1",falseLabel)
+          , Mips.LI (place,"0")
+          , Mips.LABEL trueLabel ]
+      end
   | Negate (e', pos) =>
     raise Fail "Unimplemented feature negate"
 
