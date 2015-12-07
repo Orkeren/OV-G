@@ -136,7 +136,12 @@ and checkExp ftab vtab (exp : In.Exp)
          end
 
     | In.Negate (e, pos)
-      => raise Fail "Unimplemented feature negate"
+      => let val t = Int
+             val (t1, e_dec) = checkExp ftab vtab e
+         in  if t = t1
+             then (t1, Out.Not (e_dec, pos))
+             else raise Error ("In Negate: types not equal "^ppType t^" and "^ppType t1, pos)
+         end
 
     (* The types for e1, e2 must be the same. The result is always a Bool. *)
     | In.Equal (e1, e2, pos)
