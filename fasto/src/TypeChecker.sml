@@ -217,7 +217,12 @@ and checkExp ftab vtab (exp : In.Exp)
          end
 
     | In.Iota (n_exp, pos)
-      => raise Fail "Unimplemented feature iota"
+      => let val t = Int
+             val (t1, e_dec) = checkExp ftab vtab n_exp
+         in  if t = t1
+             then (t1, Out.Not (e_dec, pos))
+             else raise Error ("In Not: types not equal "^ppType t^" and "^ppType t1, pos)
+         end
                
     | In.Map (f, arr_exp, _, _, pos)
       => raise Fail "Unimplemented feature map"
