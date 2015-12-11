@@ -169,21 +169,46 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
             | _ => invalidOperands "Divide on non-integral args: " [(Int, Int)] res1 res2 pos
         end    
 
+        
   | evalExp (And (e1, e2, pos), vtab, ftab) =
-        let val res1   = evalExp(e1, vtab, ftab)
-            val res2   = evalExp(e2, vtab, ftab)
-        in  case (res1, res2) of
-              (BoolVal b1, BoolVal b2) => if b1 then (if b2 then BoolVal true else BoolVal false) else BoolVal false
-            | _ => invalidOperands "Boolean And on non-boolean args: " [(Bool, Bool)] res1 res2 pos
-        end 
+        let val res1 = evalExp(e1, vtab, ftab)
+        in
+          (case res1 of
+              BoolVal b1 =>
+                if b1
+                then 
+                  let val res2 = evalExp(e2, vtab, ftab)
+                  in
+                    (case res2 of
+                        BoolVal b2 =>
+                          if b2 then BoolVal true else BoolVal false
+                      | _ => invalidOperands "Boolean And on non-boolean args: " [(Bool, Bool)] res1 res2 pos
+                    )
+                  end
+                else BoolVal false
+            | _ => invalidOperand "Boolean And on at least one non-boolean arg. I have only evaluated the left hand expression: " Bool res1 pos
+          )
+        end
 
   | evalExp (Or (e1, e2, pos), vtab, ftab) =
-        let val res1   = evalExp(e1, vtab, ftab)
-            val res2   = evalExp(e2, vtab, ftab)
-        in  case (res1, res2) of
-              (BoolVal b1, BoolVal b2) => if b1 then BoolVal true else if b2 then BoolVal true else BoolVal false
-            | _ => invalidOperands "Boolean And on non-boolean args: " [(Bool, Bool)] res1 res2 pos
-        end 
+        let val res1 = evalExp(e1, vtab, ftab)
+        in
+          (case res1 of
+              BoolVal b1 =>
+                if b1
+                then BoolVal true
+                else
+                  let val res2 = evalExp(e2, vtab, ftab)
+                  in
+                    (case res2 of
+                        BoolVal b2 =>
+                          if b2 then BoolVal true else BoolVal false
+                      | _ => invalidOperands "Boolean And on non-boolean args: " [(Bool, Bool)] res1 res2 pos
+                    )
+                  end
+            | _ => invalidOperand "Boolean And on at least one non-boolean arg. I have only evaluated the left hand expression: " Bool res1 pos
+          )
+        end
 
   | evalExp ( Not(e, pos), vtab, ftab ) =
         let val res   = evalExp(e, vtab, ftab)
