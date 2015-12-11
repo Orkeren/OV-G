@@ -39,6 +39,7 @@
        | "char"         => Parser.CHAR pos
        | "fun"          => Parser.FUN pos
        | "iota"         => Parser.IOTA pos
+       | "map"          => Parser.MAP pos
        | "true"         => Parser.BOOLLIT (true, pos)
        | "false"        => Parser.BOOLLIT (false, pos)
 (* specials: *)
