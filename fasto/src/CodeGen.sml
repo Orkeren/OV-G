@@ -254,12 +254,16 @@ fun compileExp e vtable place =
           val trueLabel = newName "true"
       in  code1 @
           [ Mips.LI (place,"1")
-          , Mips.BNE (t1,"1",falseLabel)
+          , Mips.BEQ (t1,"1",falseLabel)
           , Mips.LI (place,"0")
           , Mips.LABEL trueLabel ]
       end
   | Negate (e', pos) =>
-    raise Fail "Unimplemented feature negate"
+      let val t1 = newName "negate_E"
+          val code1 = compileExp e' vtable t1
+      in  code1 @
+          [Mips.SUB (place,"0",t1)]
+      end
 
   | Let (dec, e1, pos) =>
       let val (code1, vtable1) = compileDec dec vtable
