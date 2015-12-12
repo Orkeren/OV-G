@@ -296,12 +296,18 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
           val t = rtpFunArg(farg, ftab, pos)
           val mapv = evalExp(arrexp, vtab, ftab)
       in case mapv of
-            (ArrayVal (A, _))=> ArrayVal(map f A, t)
+            (ArrayVal (A, _)) => ArrayVal(map f A, t)
           | _ => raise Fail "Not an array"
       end
 
   | evalExp ( Reduce (farg, ne, arrexp, tp, pos), vtab, ftab ) =
-    raise Fail "Unimplemented feature reduce"
+      let fun f(a,b) = evalFunArg(farg, vtab, ftab, pos, [a,b])
+          val e = evalExp(ne, vtab, ftab)
+          val redv = evalExp(arrexp, vtab, ftab)
+      in case redv of
+            (ArrayVal (A, _)) => foldl f e A
+          | _ => raise Fail "arrexp not an array"
+      end
 
   | evalExp ( Read (t,p), vtab, ftab ) =
         let val str =
