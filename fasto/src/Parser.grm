@@ -6,7 +6,7 @@ open Fasto
 open Fasto.UnknownTypes
 
 %}
-%token <(int*int)> IF THEN ELSE LET IN INT BOOL CHAR EOF
+%token <(int*int)> IF THEN ELSE LET IN INT BOOL CHAR EOF FN
 %token <string*(int*int)> ID STRINGLIT
 %token <int*(int*int)> NUM
 %token <char*(int*int)> CHARLIT
@@ -14,6 +14,7 @@ open Fasto.UnknownTypes
 %token <(int*int)> IOTA NOT NEGATE MAP REDUCE
 %token <(int*int)> PLUS MINUS DEQ EQ LTH AND OR TIMES DIVIDE
 %token <(int*int)> LPAR RPAR LBRACKET RBRACKET LCURLY RCURLY
+%token <(int*int)> ARROW
 %token <(int*int)> COMMA
 %token <(int*int)> FUN READ WRITE
 
@@ -103,6 +104,10 @@ Exp :     NUM            { Constant (IntVal (#1 $1), #2 $1) }
 ;
 
 FunArg :  ID {FunName (#1 $1)}
+        | FN Type LPAR RPAR ARROW Exp
+                        { Lambda ($2, [], $6, $1) }
+        | FN Type LPAR Params RPAR ARROW Exp
+                        { Lambda ($2, $4, $7, $1) }
 ;
 
 Exps : Exp COMMA Exps   { $1 :: $3 }

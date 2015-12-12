@@ -39,6 +39,7 @@
        | "char"         => Parser.CHAR pos
        | "fun"          => Parser.FUN pos
        | "iota"         => Parser.IOTA pos
+       | "fn"           => Parser.FN pos
        | "map"          => Parser.MAP pos
        | "reduce"       => Parser.REDUCE pos
        | "true"         => Parser.BOOLLIT (true, pos)
@@ -84,6 +85,7 @@ rule Token = parse
   | "&&"                { Parser.AND    (getPos lexbuf) }
   | "||"                { Parser.OR     (getPos lexbuf) }
   | "=="                { Parser.DEQ    (getPos lexbuf) }
+  | "=>"                { Parser.ARROW  (getPos lexbuf) }
   | `=`                 { Parser.EQ     (getPos lexbuf) }
   | `<`                 { Parser.LTH    (getPos lexbuf) }
   | `(`                 { Parser.LPAR   (getPos lexbuf) }
