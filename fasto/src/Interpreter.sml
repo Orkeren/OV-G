@@ -287,12 +287,18 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
         let val iotv= evalExp(e, vtab, ftab)
             fun range x ys = if (0 > x) then ys else range (x - 1) (x::ys)
         in case (iotv) of
-                IntVal n => ArrayVal (map IntVal (range n []), Int)
+             IntVal n => ArrayVal (map IntVal (range n []), Int)
            | _ => raise Fail "Iota function on non-integer arg"
         end
 
   | evalExp ( Map (farg, arrexp, _, _, pos), vtab, ftab ) =
-    raise Fail "Unimplemented feature map"
+      let fun f(x) = evalFunArg(farg, vtab, ftab, pos, [x])
+          val t = rtpFunArg(farg, ftab, pos)
+          val mapv = evalExp(arrexp, vtab, ftab)
+      in case mapv of
+            (ArrayVal (A, _))=> ArrayVal(map f A, t)
+          | _ => raise Fail "Not an array"
+      end
 
   | evalExp ( Reduce (farg, ne, arrexp, tp, pos), vtab, ftab ) =
     raise Fail "Unimplemented feature reduce"

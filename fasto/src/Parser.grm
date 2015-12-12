@@ -11,13 +11,14 @@ open Fasto.UnknownTypes
 %token <int*(int*int)> NUM
 %token <char*(int*int)> CHARLIT
 %token <bool*(int*int)> BOOLLIT
-%token <(int*int)> IOTA NOT NEGATE
+%token <(int*int)> IOTA NOT NEGATE MAP
 %token <(int*int)> PLUS MINUS DEQ EQ LTH AND OR TIMES DIVIDE
 %token <(int*int)> LPAR RPAR LBRACKET RBRACKET LCURLY RCURLY
 %token <(int*int)> COMMA
 %token <(int*int)> FUN READ WRITE
 
 %nonassoc ifprec letprec
+%left IOTA MAP
 %left AND OR
 %left DEQ LTH
 %left PLUS MINUS
@@ -32,6 +33,7 @@ open Fasto.UnknownTypes
 %type <Fasto.Param list> Params
 %type <Fasto.UnknownTypes.Exp> Exp
 %type <Fasto.UnknownTypes.Exp list> Exps
+%type <Fasto.UnknownTypes.FunArg> FunArg
 
 %%
 
@@ -95,6 +97,10 @@ Exp :     NUM            { Constant (IntVal (#1 $1), #2 $1) }
         | ID LBRACKET Exp RBRACKET
                         { Index (#1 $1, $3, (), $2) }
         | IOTA Exp      { Iota ($2, $1)}
+        | MAP LPAR FunArg COMMA Exp RPAR { Map ($3, $5, (), (), $1)}
+;
+
+FunArg :  ID {FunName (#1 $1)}
 ;
 
 Exps : Exp COMMA Exps   { $1 :: $3 }
