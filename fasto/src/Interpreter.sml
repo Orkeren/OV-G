@@ -287,7 +287,7 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
         let val iotv= evalExp(e, vtab, ftab)
             fun range x ys = if (0 > x) then ys else range (x - 1) (x::ys)
         in case (iotv) of
-             IntVal n => ArrayVal (map IntVal (range n []), Int)
+             IntVal n => ArrayVal (map IntVal (range (n-1) []), Int)
            | _ => raise Fail "Iota function on non-integer arg"
         end
 
