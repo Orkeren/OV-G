@@ -128,11 +128,10 @@ and checkExp ftab vtab (exp : In.Exp)
          end
 
     | In.Not (e, pos)
-      => let val t = Bool
-             val (t1, e_dec) = checkExp ftab vtab e
-         in  if t = t1
-             then (t1, Out.Not (e_dec, pos))
-             else raise Error ("In Not: types not equal "^ppType t^" and "^ppType t1, pos)
+      => let val (t, e_dec) = checkExp ftab vtab e
+         in  if t = Bool
+             then (t, Out.Not (e_dec, pos))
+             else raise Error ("In Not: types not equal "^ppType t^" and "^ppType Bool, pos)
          end
 
     | In.Negate (e, pos)
@@ -222,18 +221,32 @@ and checkExp ftab vtab (exp : In.Exp)
          end
 
     | In.Iota (n_exp, pos)
-      => let val t = Int
-             val (t1, e_dec) = checkExp ftab vtab n_exp
-         in  if t = t1
-             then (t1, Out.Not (e_dec, pos))
-             else raise Error ("In Not: types not equal "^ppType t^" and "^ppType t1, pos)
+      => let val (e_type, n_exp_dec) = checkExp ftab vtab n_exp
+         in if e_type = Int
+            then (Array Int, Out.Iota (n_exp_dec, pos))
+            else raise Error ("Iota: wrong argument type " ^
+                              ppType e_type, pos)
          end
-               
+
     | In.Map (f, arr_exp, _, _, pos)
-      => raise Fail "Unimplemented feature map"
-               
+      => let val (t, e_dec) = checkExp ftab vtab arr_exp
+             val (f_name, tr, ts) = checkFunArg (f, vtab, ftab, pos)
+         in if t = hd ts
+            then (t, Out.Map (f_name, e_dec, t, tr, pos))
+            else raise Error("In Map: types not equal "^ppType t^" and "^ppType (hd ts), pos)
+         end
+
+
     | In.Reduce (f, n_exp, arr_exp, _, pos)
-      => raise Fail "Unimplemented feature reduce"
+      => let val (t1, e1_dec) = checkExp ftab vtab n_exp
+             val (t2, e2_dec) = checkExp ftab vtab arr_exp
+             val (f_name, tr, ts) = checkFunArg (f, vtab, ftab, pos)
+             val t3 = List.nth(ts, 0)
+             val t4 = List.nth(ts, 1)
+         in if (t1 = t2 andalso t1 = t3 andalso t1 = t4)
+            then (t1, Out.Reduce (f_name, e1_dec, e2_dec, t1, pos))
+            else raise Error("In Reduce: types not equal "^ppType t1^" and "^ppType t2, pos)
+         end
 
 and checkFunArg (In.FunName fname, vtab, ftab, pos) =
     (case SymTab.lookup fname ftab of
