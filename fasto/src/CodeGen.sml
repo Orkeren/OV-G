@@ -150,6 +150,13 @@ fun applyRegs( fid: string,
       else move_code @ [ Mips.JAL(fid,caller_regs), Mips.MOVE(place, "2") ]
   end
 
+fun applyFunArgs (f, args, place, pos)
+  let val t1 = newName "fargs"
+      val applyCode = applyRegs(f, args, place, pos)
+  in  applycode @ [Mips.MOVE (caller_regs, args)]
+  end
+
+
 (* Compile 'e' under bindings 'vtable', putting the result in its 'place'. *)
 fun compileExp e vtable place =
   case e of
@@ -521,8 +528,60 @@ fun compileExp e vtable place =
          @ loop_footer
       end
 
+
   | Map (farg, arr_exp, elem_type, ret_type, pos) =>
-    raise Fail "Unimplemented feature map"
+      let val mapArray = newName "mapArray" 
+          val n_code = compileExp arr_exp ftable mapArray
+          (* mapArray is now the array. *)
+          
+
+          (* Check that array size N >= 0:
+             if N =/= 0 then jumpto safe_lab
+             jumpto "_IllegalArrSizeError_"
+             safe_lab: ...
+          *)
+          val arraytypesize = elemSizeToInt(getElemSize(elem_type))
+          val arg_leng = length args
+          val arg_leng_bool = newName "arg_leng_bool"
+          val safe = newName "safe"
+          val checksize = [ Mips.SLT (arg_leng_bool, "0", makeConst arg_leng)
+                          , Mips.BEQ (arg_leng_bool, "1", safe)
+                          , Mips.J "_IllegalArrSizeError_"
+                          , Mips.LABEL (safe)
+                          , Mips.ADDI (size_reg, size_reg, "1")
+                          ]
+
+          val addr_reg = newName "addr_reg"
+          val i_reg = newName "i_reg"
+          val init_regs = [ Mips.ADDI (addr_reg, place, "4")
+                          , Mips.MOVE (i_reg, "0") ]
+          (* addr_reg is now the position of the first array element. *)
+
+          (* Run a loop.  Keep jumping back to loop_beg until it is not the
+             case that i_reg < size_reg, and then jump to loop_end. *)
+          val loop_beg = newName "loop_beg"
+          val loop_end = newName "loop_end"
+          val tmp_reg = newName "tmp_reg"
+          val loop_header = [ Mips.LABEL (loop_beg)
+                            , Mips.SUB (tmp_reg, i_reg, size_reg)
+                            , Mips.BGEZ (tmp_reg, loop_end) ]
+
+          (* iota is just 'arr[i] = i'.  arr[i] is addr_reg. *)
+          val loop_map = [ Mips.SW (i_reg, addr_reg, "0") ]
+
+          val loop_footer = [ Mips.ADDI (addr_reg, addr_reg, "4")
+                            , Mips.ADDI (i_reg, i_reg, "1")
+                            , Mips.J loop_beg
+                            , Mips.LABEL loop_end
+                            ]
+      in n_code
+         @ checksize
+         @ dynalloc (mapArray, place, elem_type)
+         @ init_regs
+         @ loop_header
+         @ loop_map
+         @ loop_footer
+      end
 
   (* reduce(f, acc, {x1, x2, ...}) = f(..., f(x2, f(x1, acc))) *)
   | Reduce (binop, acc_exp, arr_exp, tp, pos) =>
