@@ -412,19 +412,25 @@ fun compileExp e vtable place =
           val code1 = compileExp e1 vtable t1
           val code2 = compileExp e2 vtable t2
           val falseLabel = newName "false"
-          val trueLabel = newName "true"
       in  code1 @ code2 @
-          [Mips.AND (place,t1,t2)]
+          [Mips.BEQ (t1, "0", falseLabel),
+           Mips.BEQ (t2, "0", falseLabel),
+           Mips.LI (place, "1"),
+           Mips.LABEL falseLabel,
+           Mips.LI (place, "0")]
       end
   | Or (e1, e2, pos) =>
       let val t1 = newName "or_L"
           val t2 = newName "or_R"
           val code1 = compileExp e1 vtable t1
           val code2 = compileExp e2 vtable t2
-          val falseLabel = newName "false"
           val trueLabel = newName "true"
       in  code1 @ code2 @
-          [Mips.OR (place,t1,t2)]
+          [Mips.BEQ (t1, "1", trueLabel),
+           Mips.BEQ (t2, "1", trueLabel),
+           Mips.LI (place, "0"),
+           Mips.LABEL trueLabel,
+           Mips.LI (place, "1")]
       end
 
   (* Indexing:
