@@ -151,9 +151,8 @@ fun applyRegs( fid: string,
   end
 
 fun applyFunArgs (f, args, place, pos)
-  let val t1 = newName "fargs"
-      val applyCode = applyRegs(f, args, place, pos)
-  in  applycode @ [Mips.MOVE (caller_regs, args)]
+  let val fargs = newName "fargs"
+  in  applyRegs(f, args, place, pos) @ [Mips.MOVE (place, fargs)]
   end
 
 
@@ -567,7 +566,7 @@ fun compileExp e vtable place =
                             , Mips.BGEZ (tmp_reg, loop_end) ]
 
           (* iota is just 'arr[i] = i'.  arr[i] is addr_reg. *)
-          val loop_map = [ Mips.SW (i_reg, addr_reg, "0") ]
+          val loop_map = applyFunArgs(farg, arr_exp, place, pos)
 
           val loop_footer = [ Mips.ADDI (addr_reg, addr_reg, "4")
                             , Mips.ADDI (i_reg, i_reg, "1")
