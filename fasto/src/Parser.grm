@@ -20,11 +20,13 @@ open Fasto.UnknownTypes
 
 %nonassoc ifprec letprec
 %left IOTA MAP REDUCE
-%left AND OR
+%left OR
+%left AND
+%left NOT
 %left DEQ LTH
 %left PLUS MINUS
 %left TIMES DIVIDE
-%left NOT NEGATE
+%left NEGATE
 
 %start Prog
 %type <Fasto.UnknownTypes.Prog> Prog
