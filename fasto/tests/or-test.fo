@@ -1,0 +1,6 @@
+fun bool or(bool n) =
+ n = n || true
+
+fun bool main() =
+  let n = read(bool) in
+  write(or(n))
