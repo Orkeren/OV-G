@@ -1,0 +1,6 @@
+fun int divide(int n) =
+ n = n / 2
+
+fun int main() =
+  let n = read(int) in
+  write(divide(n))
