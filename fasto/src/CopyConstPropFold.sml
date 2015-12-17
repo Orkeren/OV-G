@@ -52,10 +52,6 @@ fun copyConstPropFoldExp vtable e =
                e2'
              | (_, Constant (IntVal 1, _)) =>
                e1'
-             | (Constant (IntVal 0, _), _) =>
-               Constant (IntVal 0, pos)
-             | (_, Constant (IntVal 0, _)) =>
-               Constant (IntVal 0, pos)
              | _ =>
                Times (e1', e2', pos)
         end
