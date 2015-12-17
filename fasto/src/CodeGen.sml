@@ -150,11 +150,6 @@ fun applyRegs( fid: string,
       else move_code @ [ Mips.JAL(fid,caller_regs), Mips.MOVE(place, "2") ]
   end
 
-fun applyFunArgs (f, args, place, pos)
-  let val fargs = newName "fargs"
-  in  applyRegs(f, args, place, pos) @ [Mips.MOVE (place, fargs)]
-  end
-
 
 (* Compile 'e' under bindings 'vtable', putting the result in its 'place'. *)
 fun compileExp e vtable place =
@@ -531,13 +526,12 @@ fun compileExp e vtable place =
   | Map (farg, arr_exp, elem_type, ret_type, pos) =>
       let val mapArray = newName "mapArray" 
           val n_code = compileExp arr_exp ftable mapArray
-          (* mapArray is now the array. *)
+          (* mapArray is now the array. *) 
           
 
-          (* Check that array size N >= 0:
-             if N =/= 0 then jumpto safe_lab
+          (* Check that array size N > 0:
+             if N =/= 0 then jumpto safe
              jumpto "_IllegalArrSizeError_"
-             safe_lab: ...
           *)
           val arraytypesize = elemSizeToInt(getElemSize(elem_type))
           val arg_leng = length args
@@ -554,7 +548,7 @@ fun compileExp e vtable place =
           val i_reg = newName "i_reg"
           val init_regs = [ Mips.ADDI (addr_reg, place, "4")
                           , Mips.MOVE (i_reg, "0") ]
-          (* addr_reg is now the position of the first array element. *)
+          (* addr_reg is now the position of the first array element. *) 
 
           (* Run a loop.  Keep jumping back to loop_beg until it is not the
              case that i_reg < size_reg, and then jump to loop_end. *)
@@ -566,13 +560,13 @@ fun compileExp e vtable place =
                             , Mips.BGEZ (tmp_reg, loop_end) ]
 
           (* iota is just 'arr[i] = i'.  arr[i] is addr_reg. *)
-          val loop_map = applyFunArgs(farg, arr_exp, place, pos)
+        val loop_map = applyFunArgs(farg, arr_exp, place, pos)
 
-          val loop_footer = [ Mips.ADDI (addr_reg, addr_reg, "4")
+        val loop_footer = [ Mips.ADDI (addr_reg, addr_reg, "4")
                             , Mips.ADDI (i_reg, i_reg, "1")
                             , Mips.J loop_beg
                             , Mips.LABEL loop_end
-                            ]
+                            ] 
       in n_code
          @ checksize
          @ dynalloc (mapArray, place, elem_type)
@@ -580,11 +574,17 @@ fun compileExp e vtable place =
          @ loop_header
          @ loop_map
          @ loop_footer
-      end
+      end 
 
   (* reduce(f, acc, {x1, x2, ...}) = f(..., f(x2, f(x1, acc))) *)
   | Reduce (binop, acc_exp, arr_exp, tp, pos) =>
     raise Fail "Unimplemented feature reduce"
+
+
+and applyFunArgs f args place pos vtable =
+  let val fargs = newName "fargs"
+  in  applyRegs(f, args, place, pos) @ [Mips.MOVE (place, fargs)]
+  end
 
 (* compile condition *)
 and compileCond c vtable tlab flab =
