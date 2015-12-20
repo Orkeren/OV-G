@@ -1,4 +1,3 @@
-
 % Document class: article with font size 11pt
 % ---------------
 \documentclass[11pt,a4paper]{article}
@@ -15,7 +14,6 @@
 \setlength{\oddsidemargin}{0mm}
 \setlength{\topmargin}{0mm}
 \setlength{\evensidemargin}{0mm}
-
 \usepackage[a4paper, hmargin={2.8cm, 2.8cm}, vmargin={2.5cm, 2.5cm}]{geometry}
 \usepackage[super]{nth}
 \PassOptionsToPackage{hyphens}{url}\usepackage{hyperref}
@@ -84,52 +82,232 @@
 
 
 \author{
-  \Large{
-    Frenzel, Sven Uhrenholdt (\href{mailto:frenzel@di.ku.dk}{frenzel@di.ku.dk}) - 130793 - cdn769}\\
-  \Large{
-    Holm, Cecilie Harbo (\href{mailto:xjq172@alumni.ku.dk}{xjq172@alumni.ku.dk})  - 080993 - xjq172} \\
-  \Large{
-    Cordes, Andrea (\href{mailto:stc863@alumni.ku.dk}{stc863@alumni.ku.dk}) - 150594 - stc863
-  }\\
+	\Large{
+		Frenzel, Sven Uhrenholdt (\href{mailto:frenzel@di.ku.dk}{frenzel@di.ku.dk}) - 130793 - cdn769}\\
+	\Large{
+		Holm, Cecilie Harbo (\href{mailto:xjq172@alumni.ku.dk}{xjq172@alumni.ku.dk})  - 080993 - xjq172} \\
+	\Large{
+		Cordes, Andrea Charlie Stender (\href{mailto:ancor@di.ku.dk}{ancor@di.ku.dk}) - 150594 - stc863
+	}\\
 }
 \title{
-  \huge{Compilers\\}
-\vspace{3cm}
-\Large{Group Assignment}
+	\huge{Compilers\\}
+	\vspace{3cm}
+	\Large{Group Assignment}
 }
 
 \begin{document}
-
-\AddToShipoutPicture*{\put(0,0){\includegraphics*[viewport=0 0 700 600]{include/natbio-farve}}}
-\AddToShipoutPicture*{\put(0,602){\includegraphics*[viewport=0 600 700 1600]{include/natbio-farve}}}
-
-\AddToShipoutPicture*{\put(0,0){\includegraphics*{include/nat-en}}}
-
-\clearpage\maketitle
-\thispagestyle{empty}
-
-\clearpage\newpage
-\thispagestyle{plain}
-
-
-\section{Interpreter}
-We have thus far implemented \texttt{Times}, \texttt{Divide}, \texttt{And}, \texttt{Or}, \texttt{Not} and \texttt{Iota}.
-
-\section{Lexer}
-We have thus far implemented \texttt{Times}, \texttt{Divide}, \texttt{And}, \texttt{Or}, \texttt{Not} and \texttt{Iota}.
-
-\section{Parser}
-We have thus far implemented \texttt{Times}, \texttt{Divide}, \texttt{And}, \texttt{Or}, \texttt{Not} and \texttt{Iota}.
-
-\section{TypeChecker}
-We have thus far implemented \texttt{Times}, \texttt{Divide}, \texttt{And}, \texttt{Or} and \texttt{Not}.
-
-\section{CodeGen}
-We have thus far implemented \texttt{Times} and \texttt{Divide}.
-
-%\newpage
-%\bibliography{mybib}
-%\bibliographystyle{ieeetr}
-
-
+	
+	\AddToShipoutPicture*{\put(0,0){\includegraphics*[viewport=0 0 700 600]{include/natbio-farve}}}
+	\AddToShipoutPicture*{\put(0,602){\includegraphics*[viewport=0 600 700 1600]{include/natbio-farve}}}
+	
+	\AddToShipoutPicture*{\put(0,0){\includegraphics*{include/nat-en}}}
+	
+	\clearpage\maketitle
+	\thispagestyle{empty}
+	
+	\clearpage
+	\newpage
+	\thispagestyle{plain}
+	
+	\section{Multiplication, division, boolean operators and literals}
+	
+	\subsection{Multiplication}
+	Multiplication is implemented like the cases \texttt{Plus} and \texttt{Minus} in \texttt{evalExp} in Interpreter.sml. The case of multiplication is named \texttt{Times}, and the primary difference from the mentioned \texttt{Plus} and \texttt{Minus}, is in line 160:\\
+	\texttt{(IntVal n1, IntVal n2) => IntVal (n1*n2)},\\
+	where the *-symbol replaces + or -.\\
+	
+	In Lexer.lex, \texttt{Times} is defined as '*' in line 83 and refers to \texttt{TIMES} in Parser.grm.\\
+	
+	In TypeChecker.sml, lines 106-110, \texttt{Times} is implemented exactly the same way as \texttt{Plus} and \texttt{Minus}.
+	
+	In CodeGen.sml, lines 240-246,  \texttt{Times} is implemented exactly the same way as \texttt{Plus} and \texttt{Minus}.
+	
+	
+	\subsection{Division}
+	\texttt{Divide} is implemented the same way as \texttt{Times} in \texttt{evalExp} in Interpreter.sml. It is important to notice the type of division in line 168:\\
+	\texttt{(IntVal n1, IntVal n2) => IntVal (Int.quot(n1, n2))},\\
+	where \texttt{Int.quot} is used instead of \texttt{div}.\\
+	%because it rounds towards zero and is thereby compatible with the MIPS division instruction and FASTO.
+	
+	In Lexer.lex, \texttt{Divide} is defined as '/' in line 84 and refers to \texttt{DIVIDE} in Parser.grm.\\
+	
+	In TypeChecker.sml, lines 112-116, \texttt{Divide} is implemented exactly the same way as \texttt{Plus} and \texttt{Minus}.
+	
+	In CodeGen.sml, lines 248-254,  \texttt{Division} is implemented exactly the same way as \texttt{Plus} and \texttt{Minus}
+	
+	\subsection{Boolean operators}
+	\subsubsection{\texttt{And}}
+	\texttt{And} is implemented by short-circuiting; it only returns true if the first argument and the second argument is true. If the first argument is false, there is no need to check the second argument. This counts for both the \texttt{And} \texttt{evalExp} in Interpreter.sml, line 173-191, and for the \texttt{And} \texttt{compileExp} in CodeGen.sml, line 416-428. There it checks first one expression then the other, and if either is "0", then jumps to the "falseLabel" returning 0.
+	
+	In Lexer.lex, \texttt{And} is defined as "\&\&" in line 85 and refers to \texttt{AND} in Parser.grm.
+	
+	In TypeChecker.sml, \texttt{And} is implemented almost the same way as \texttt{Plus} and \texttt{Minus}. The main difference is that \texttt{And} is a boolean, as seen in line 121:\\
+	\texttt{Out.And (e1\_dec, e2\_dec, pos))}
+	
+	\subsubsection{\texttt{Or}}
+	\texttt{Or} is implemented likewise; it returns true when it meets a true argument and then halts. This counts for both the \texttt{Or} in \texttt{evalExp} in Interpreter.sml, line 193-211, and for the \texttt{And} \texttt{compileExp} in CodeGen.sml, line 430-442. It works the same as with AND with the Mips code first first checking if the first argument is true, and if it is, returning the truelabel, if it isn't, it then does the same with the next argument, and if neither is true, it returns false, aka. 0.
+	
+	In Lexer.lex, \texttt{Or} is defined as "||" in line 86 and refers to \texttt{OR} in Parser.grm.
+	
+	As for the operator \texttt{And} in TypeChecker.sml, the main difference from \texttt{Plus} and \texttt{Minus} is that \texttt{Or} is a boolean, as seen in line 127:\\
+	\texttt{Out.Or (e1\_dec, e2\_dec, pos))}
+	
+	\subsection{Literals}
+	\texttt{true} and \texttt{false} already exists in SML, which is why they can be used as keywords in lines 45-46 in the lexer and thereby refer to \texttt{BOOLLIT} in the parser.\\ 
+	We do, however need to implement it in CodeGen.sml. That is done by evaluating the expression in a if-then-else statement. If true 1 is passed, if false 0 is passed, lines 170-172.
+	
+	\subsection{Unary operators} 
+	\subsubsection{\texttt{Not}}
+	The case of \texttt{Not} is implemented in Interpreter.sml simply by checking if an argument is true, and then turning it false, if that is the case. If that is not the case, the argument is then turned true, as seen in line 216:\\
+	\texttt{BoolVal b => if b then BoolVal false else BoolVal true}.\\
+	In Lexer.lex, \texttt{Not} is used as the keyword "not" in line 38 and refers to \texttt{NOT} in Parser.grm.\\
+	
+	In TypeChecker.sml, \texttt{In.Not} checks in line 132 if the type of the expression is Bool, and then returns the type-checked expression for \texttt{In.Not}, or raises a fail if the types do not match.
+	
+	In CodeGen.sml, lines 256-265, it checks if the expression is equal to the integer 0 and if it is, it return "1" and if not it returns "0".
+	
+	\subsubsection{\texttt{Negate}}
+	The case of \texttt{Negate} is implemented by subtracting an integer value from 0, as seen in line 223 in Interpreter.sml:\\
+	\texttt{IntVal n => IntVal (0 - n)}\\
+	In Lexer.lex, \texttt{Negate} is defined as '$\sim$' in line 82 and refers to \texttt{NEGATE} in Parser.grm.
+	
+	In TypeChecker.sml, \texttt{In.Negate} checks in line 140 if the type of the expression is Int, and then returns the type-checked expression for \texttt{In.Negate}, or raises a fail if the types do not match.
+	
+	In CodeGen.sml, \texttt{Negate} should get its result from subtracting the argument from 0. Something is wrong, however, as the function returns 0 no matter what. We have not been able to fix this bug. See lines 267-271.  
+	
+	\section{\texttt{iota}, \texttt{map} and \texttt{reduce}}
+	
+	\subsection{\texttt{Iota}}
+	
+	\texttt{Iota} is implemented in Interpreter.sml by using the range function to create an array of integer elements from 0 to n-1.
+	Line 290 maps the type IntVal on integers in the array, and thereby makes the case FASTO-compatible:\\
+	\texttt{IntVal n => ArrayVal (map IntVal (range (n-1) []), Int)}\\
+	%\texttt{iota} then returns the array of elements from 0 to n-1, where n is the number of elements in the array.\\
+	
+	In Lexer.lex, \texttt{Iota} is used as the keyword "iota" in line 41 and refers to \texttt{IOTA} in Parser.grm.\\
+	
+	In TypeChecker.sml, \texttt{In.Iota} checks in line 225 if the type of the expression is Int, and then returns the type-checked expression for \texttt{In.Iota}, or raises a fail if the types do not match.\\
+	
+	The CodeGen.sml code is copied from the task2.html guide. 
+	
+	
+	\subsection{\texttt{Map}}
+	\texttt{Map} is implemented in Interpreter.sml by evaluating the function \texttt{farg} and array expression \texttt{mapv} and feeding these to the build in map function of SML. This is done in line 299:\\
+	\texttt{(ArrayVal (A, \_)) => ArrayVal(map f A, t)}
+	
+	In Lexer.lex, \texttt{Map} is used as the keyword "map" in line 43 and refers to \texttt{MAP} in Parser.grm.\\
+	
+	In TypeChecker.sml, \texttt{In.Map} checks in line 237 if the type of the expression is the same type as the input function argument, and then returns the type-checked expression for \texttt{In.Map}, or raises a fail if the types do not match.\\
+	
+	In CodeGen.sml a loop is created and iterated through in the same way as in iota and the supplied function \texttt{applyRegs} (line 141-155) is used to apply named functions on each element of the array, see line 559. For lambda-functions a temporary vtable \texttt{vtable'} where the lambda function is mapped to a temporary name and \texttt{compileExp} is called recursively with the temporary vtable (line 565).
+	
+	
+	\subsection{\texttt{Reduce}}
+	\texttt{Reduce} in Interpreter.sml is implemented by using the SML-function \texttt{foldl} as \texttt{reduce} is a subset of \texttt{foldl}. This is done in line 308:\\ 
+	\texttt{(ArrayVal (A, \_)) => foldl f e A}
+	
+	In Lexer.lex, \texttt{Reduce} is used as the keyword "reduce" in line 44 and refers to \texttt{REDUCE} in Parser.grm.\\
+	
+	In TypeChecker.sml, \texttt{In.Reduce} checks in line 252 if the types of the expression is the right combination of types, and then returns the type-checked expression for \texttt{In.Reduce}, or raises a fail if the types do not match.\\
+	
+	
+	In CodeGen \texttt{Reduce} is implemented in a way very similar to \texttt{Map}. The major difference being that a temporary register less is needed, as the result from each iteration is stored in the register of the zero-element, as can be seen in line 613. For lambda functions the major difference is two temporary mappings a created. This is done through a nested call to \texttt{SymTab.bind} in line 617.
+	
+	Neither \texttt{Reduce} nor \texttt{Map} can use common operators (i.e. +,-,\texttt{not},\texttt{or}, etc) as their input functions. As an example \texttt{map(op$\sim$, \{1,2,3,\})} should return \{-1,-2,-3\}, but this is not implemented.
+	
+	\subsection{\texttt{Arrow}}
+	Arrow is implemented to enable the handling of lambda functions in FASTO.\\
+	In Lexer.lex, \texttt{Arrow} is defined as '=>' in line 88 and refers to \texttt{ARROW} in Parser.grm. See lines 109-110 in Parser.grm.\\
+	
+	
+	\section{Copy propagation and constant folding}
+	Basic constant folding for \texttt{And} and \texttt{Times} has been implemented in CopyConstPropFold.sml. The code for the constant folding of \texttt{Times} and \texttt{And} can be found in lines 45-57 and 58-70 respectively.
+	
+	No copy propagation has been implemented.
+	
+	
+	\section{Testing}
+	In the folder tests, we have added the following tests:\\
+	\textbf{map.fo} -> simple lambda-function [int] -> [int]\\
+	This test tests the \texttt{Map} function. It adds 100 to each number in the given array, and thereby writes, for the array of integers from 0 to 6, the numbers:
+	\begin{quote}
+		100 101 102 103 104 105 106,
+	\end{quote}
+	as expected.\\
+	
+	\textbf{map2.fo} -> simple lambda-function [int] - > [bool]\\
+	This test is to prove that map can type-convert. It checks if the integers in the given array are less than 10, and thereby writes, for the array of integers from 0 to 6:
+	\begin{quote}
+		True True True True True True True,
+	\end{quote}
+	as expected.             
+	
+	\textbf{andor.fo}\\
+	Tests \texttt{AND}, \texttt{OR}, \texttt{NOT} and their precedence. It should write:
+	\begin{quote}
+		True True True True True True True True False False False False False
+	\end{quote}
+	
+	\textbf{arit.fo}\\
+	Tests basic arithmetic and their precedence.
+	It should write:
+	\begin{quote}
+		True
+	\end{quote}
+	
+	\textbf{negate.fo}\\
+	Tests \texttt{Negate} and precedence.When run on interpreter.sml, it writes:
+	\begin{quote}
+		True True,
+	\end{quote}
+	as expected, when given an integer as input value.\\
+	
+	\textbf{not.fo}\\
+	This is a basic test of \texttt{NOT}, testing on, first true, then false. It writes:             
+	\begin{quote}
+		False True,
+	\end{quote}
+	as expected.\\
+	
+	\textbf{boollit.fo}\\
+	This is a basic test of boolean literals. It first tests true, then false. It writes:             
+	\begin{quote}
+		1 0,
+	\end{quote}
+	as expected.
+	
+	%Egne tests: de ligger lige nu i mappen own_tests, men bliver rykket til mappen tests inden vi afleverer.
+	%            map.fo -> simple lambda-function [int] -> [int]
+	%			 map2.fo -> -||- [int] - > [bool] (this is to prove that map can type-convert)
+	%			 andor.fo -> AND, OR, NOT and their precedence.
+	%            arit.fo -> basic arithmetic and their precedence.
+	% 			 negate.fo -> negation testing and precedence
+	%			 not.fo -> basic test of NOT.
+	%			 or-test.fo -> OR test
+	%			 and-test.fo -> AND test
+	%            boollit.fo -> basic test of boolean literals.
+	
+	
+	
+	%\section{Interpreter}
+	%We have thus far implemented \texttt{Times}, \texttt{Divide}, \texttt{And}, \texttt{Or}, \texttt{Not} and \texttt{Iota}.
+	
+	%\section{Lexer}
+	%We have thus far implemented \texttt{Times}, \texttt{Divide}, \texttt{And}, \texttt{Or}, \texttt{Not} and \texttt{Iota}.
+	
+	%\section{Parser}
+	%We have thus far implemented \texttt{Times}, \texttt{Divide}, \texttt{And}, \texttt{Or}, \texttt{Not} and \texttt{Iota}.
+	
+	%\section{TypeChecker}
+	%We have thus far implemented \texttt{Times}, \texttt{Divide}, \texttt{And}, \texttt{Or} and \texttt{Not}.
+	
+	%\section{CodeGen}
+	%We have thus far implemented \texttt{Times} and \texttt{Divide}.
+	
+	%\newpage
+	%\bibliography{mybib}
+	%\bibliographystyle{ieeetr}
+	
+	
 \end{document}
