@@ -231,9 +231,12 @@ and checkExp ftab vtab (exp : In.Exp)
     | In.Map (f, arr_exp, _, _, pos)
       => let val (t, e_dec) = checkExp ftab vtab arr_exp
              val (f_name, tr, ts) = checkFunArg (f, vtab, ftab, pos)
-         in if t = hd ts
-            then (t, Out.Map (f_name, e_dec, t, tr, pos))
-            else raise Error("In Map: types not equal "^ppType t^" and "^ppType (hd ts), pos)
+             val tIn = case t of
+                   Array(x) => x
+                 | _ => raise Error ("arr_exp not array", pos)
+         in if tIn = hd ts
+            then (Array tr, Out.Map (f_name, e_dec, tIn, tr, pos))
+            else raise Error("In Map: types not equal "^ppType tIn^" and "^ppType (hd ts), pos)
          end
 
 
