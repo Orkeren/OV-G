@@ -77,6 +77,10 @@ fun mipsStore elem_size = case elem_size of
                               One => Mips.SB
                             | Four => Mips.SW
 
+fun mipsLoad elem_size = case elem_size of
+                              One => Mips.LB
+                            | Four => Mips.LW
+
 (* generates the code to check that the array index is within bounds *)
  fun checkBounds(arr_beg, ind_reg, (line,c)) =
       let val size_reg = newName "size_reg"
@@ -134,7 +138,7 @@ fun dynalloc (size_reg : string,
 (* For each register 'r' in 'rs', copy them to registers from
 'firstReg' and counting up. Return the full code and the next unused
 register (firstReg + num_args).  *)
-fun applyRegs( fid: string,
+fun applyRegs(fid: string,
                args: string list,
                place: string, pos) : Mips.Prog =
     let val regs_num = length args
@@ -163,10 +167,10 @@ fun compileExp e vtable place =
         , Mips.ORI (place, place, makeConst (n mod 65536)) ]
   | Constant (CharVal c, pos) => [ Mips.LI (place, makeConst (ord c)) ]
 
-  | Constant (BoolVal b, pos) =>  if b 
+  | Constant (BoolVal b, pos) =>  if b
                                   then [ Mips.LI (place, makeConst 1) ]
                                   else  [ Mips.LI (place, makeConst 0) ]
-  
+
   (* Create/return a label here, collect all string literals of the program
      (in stringTable), and create them in the data section before the heap
      (Mips.ASCIIZ) *)
@@ -240,7 +244,7 @@ fun compileExp e vtable place =
           val code2 = compileExp e2 vtable t2
       in  code1 @ code2 @ [Mips.MUL (place,t1,t2)]
       end
-      
+
   | Divide (e1, e2, pos) =>
       let val t1 = newName "divide_L"
           val t2 = newName "divide_R"
@@ -248,22 +252,22 @@ fun compileExp e vtable place =
           val code2 = compileExp e2 vtable t2
       in  code1 @ code2 @ [Mips.DIV (place,t1,t2)]
       end
-      
+
   | Not (e', pos) =>
       let val t1 = newName "not_E"
           val code1 = compileExp e' vtable t1
-          val falseLabel = newName "false"
+          val trueLabel = newName "true"
       in  code1 @
-          [ Mips.BEQ (t1, "true" ,falseLabel)
-          , Mips.LI (place,"1")
-          , Mips.LABEL falseLabel
-          , Mips.LI (place,"0") ]
+          [Mips.LI (place,"1"),
+           Mips.BEQ (t1, "0" ,trueLabel),
+          Mips.LI (place,"0"),
+          Mips.LABEL trueLabel]
       end
   | Negate (e', pos) =>
-      let val t1 = newName "negate_E"
+      let val t1 = newName "negate"
           val code1 = compileExp e' vtable t1
       in  code1 @
-          [Mips.SUB (place,"0",t1)]
+          [Mips.XORI (place, t1, "0x00000000")]
       end
 
   | Let (dec, e1, pos) =>
@@ -412,25 +416,26 @@ fun compileExp e vtable place =
           val code1 = compileExp e1 vtable t1
           val code2 = compileExp e2 vtable t2
           val falseLabel = newName "false"
-      in  code1 @ code2 @
-          [Mips.BEQ (t1, "0", falseLabel),
-           Mips.BEQ (t2, "0", falseLabel),
-           Mips.LI (place, "1"),
-           Mips.LABEL falseLabel,
-           Mips.LI (place, "0")]
+      in  code1 @
+          [Mips.LI (place, "0"),
+           Mips.BEQ (t1, "0", falseLabel)] @ code2 @
+          [Mips.BEQ (t2, "0", falseLabel),
+           Mips.LI (place, "1")] @
+          [Mips.LABEL falseLabel]
       end
+
   | Or (e1, e2, pos) =>
       let val t1 = newName "or_L"
           val t2 = newName "or_R"
           val code1 = compileExp e1 vtable t1
           val code2 = compileExp e2 vtable t2
           val trueLabel = newName "true"
-      in  code1 @ code2 @
-          [Mips.BEQ (t1, "1", trueLabel),
-           Mips.BEQ (t2, "1", trueLabel),
-           Mips.LI (place, "0"),
-           Mips.LABEL trueLabel,
-           Mips.LI (place, "1")]
+      in  code1 @
+          [Mips.LI (place, "1"),
+           Mips.BNE (t1, "0", trueLabel)] @ code2 @
+          [Mips.BNE (t2, "0", trueLabel),
+           Mips.LI (place, "0")] @
+          [Mips.LABEL trueLabel]
       end
 
   (* Indexing:
