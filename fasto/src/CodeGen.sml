@@ -163,10 +163,10 @@ fun compileExp e vtable place =
         , Mips.ORI (place, place, makeConst (n mod 65536)) ]
   | Constant (CharVal c, pos) => [ Mips.LI (place, makeConst (ord c)) ]
 
-  | Constant (BoolVal b, pos) =>  if b 
+  | Constant (BoolVal b, pos) =>  if b
                                   then [ Mips.LI (place, makeConst 1) ]
                                   else  [ Mips.LI (place, makeConst 0) ]
-  
+
   (* Create/return a label here, collect all string literals of the program
      (in stringTable), and create them in the data section before the heap
      (Mips.ASCIIZ) *)
@@ -240,7 +240,7 @@ fun compileExp e vtable place =
           val code2 = compileExp e2 vtable t2
       in  code1 @ code2 @ [Mips.MUL (place,t1,t2)]
       end
-      
+
   | Divide (e1, e2, pos) =>
       let val t1 = newName "divide_L"
           val t2 = newName "divide_R"
@@ -248,7 +248,7 @@ fun compileExp e vtable place =
           val code2 = compileExp e2 vtable t2
       in  code1 @ code2 @ [Mips.DIV (place,t1,t2)]
       end
-      
+
   | Not (e', pos) =>
       let val t1 = newName "not_E"
           val code1 = compileExp e' vtable t1
