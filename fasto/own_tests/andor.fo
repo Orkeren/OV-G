@@ -1,0 +1,14 @@
+fun bool main() =
+let tmp = write(true && (true || false))  in
+let tmp = write(true && true || false)    in
+let tmp = write(false || true && true)    in
+let tmp = write(true && true)             in
+let tmp = write(false || true)            in
+let tmp = write(not false || false)       in
+let tmp = write(true || false)            in
+let tmp = write(not(true && false))       in
+let tmp = write(true && not true)         in
+let tmp = write(true && false)            in
+let tmp = write(false && true)            in
+let tmp = write(false && false)           in
+          write(false || false)
