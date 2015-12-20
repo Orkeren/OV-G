@@ -39,7 +39,7 @@ fun buildFtab [] =
                        , ("ord", FunDec ("ord", Int, [Param ("c", Char)],
                                          Constant (IntVal 1, p), p)) ]
     end
-  | buildFtab ( fdcl::fs ) =
+  | buildFtab (fdcl::fs ) =
     (* Bind the user-defined functions, in reverse order. *)
     let
       val fid   = getFunName fdcl
@@ -54,10 +54,10 @@ fun buildFtab [] =
     end
 
 (* Check whether a value matches a type. *)
-fun typeMatch ( Int,  IntVal _ ) = true
-  | typeMatch ( Bool, BoolVal _) = true
-  | typeMatch ( Char, CharVal _) = true
-  | typeMatch ( Array t, ArrayVal (vals, tp) ) =
+fun typeMatch (Int,  IntVal _ ) = true
+  | typeMatch (Bool, BoolVal _) = true
+  | typeMatch (Char, CharVal _) = true
+  | typeMatch (Array t, ArrayVal (vals, tp) ) =
     (t = tp) andalso List.all (fn value => typeMatch (t, value)) vals
   | typeMatch (_, _) = false
 
@@ -76,16 +76,16 @@ fun invalidOperands str tps e0 e1 pos =
     end
 
 (* Index into an array. Check that the index is not out of bounds. *)
-fun applyIndexing( ArrayVal(lst, tp), IntVal ind, pos ) =
+fun applyIndexing(ArrayVal(lst, tp), IntVal ind, pos ) =
         let val len = List.length(lst)
-        in if( len > ind andalso ind >= 0 )
+        in if(len > ind andalso ind >= 0 )
              then List.nth(lst,ind)
              else raise Error("Array index out of bounds! Array length: "^
                               Int.toString(len)^" Index: "^Int.toString(ind), pos )
         end
-  | applyIndexing( arr, IntVal ind, pos ) =
+  | applyIndexing(arr, IntVal ind, pos ) =
     raise Error("Indexing Error: " ^ (ppVal 0 arr) ^ " is not an array", pos)
-  | applyIndexing( arr, e, pos ) = (* Order of clauses is important here. *)
+  | applyIndexing(arr, e, pos ) = (* Order of clauses is important here. *)
     invalidOperand "Indexing error, non-integral index" Int e pos
 
 (* Bind the formal parameters of a function declaration to actual parameters in
@@ -95,9 +95,9 @@ fun bindParams ([], [], fid, pd, pc) = SymTab.empty()
         raise Error("Number of formal and actual params do not match in call to "^fid, pc)
   | bindParams (b,  [], fid, pd, pc) =
         raise Error("Number of formal and actual params do not match in call to "^fid, pc)
-  | bindParams ( Param (faid, fatp)::fargs, a::aargs, fid, pd, pc ) =
-        let val vtab   = bindParams( fargs, aargs, fid, pd, pc )
-        in  if( typeMatch(fatp, a) )
+  | bindParams (Param (faid, fatp)::fargs, a::aargs, fid, pd, pc ) =
+        let val vtab   = bindParams(fargs, aargs, fid, pd, pc )
+        in  if(typeMatch(fatp, a) )
               then case SymTab.lookup faid vtab of
                      NONE   => SymTab.bind faid a vtab
                    | SOME m => raise Error("Formal argument is already in symbol table!"^
@@ -116,28 +116,28 @@ fun bindParams ([], [], fid, pd, pc) = SymTab.empty()
     2. ftab holds bindings between function names and
        function declarations (Fasto.FunDec).
     3. Returns the interpreted value. *)
-fun evalExp ( Constant (v,_), vtab, ftab ) = v
-  | evalExp ( ArrayLit (l, t, pos), vtab, ftab ) =
+fun evalExp (Constant (v,_), vtab, ftab ) = v
+  | evalExp (ArrayLit (l, t, pos), vtab, ftab ) =
         let val els = (map (fn x => evalExp(x, vtab, ftab)) l)
             val elt = case els of []   => Int (* Arbitrary *)
                                 | v::_ => valueType v
         in ArrayVal (els, elt)
         end
 
-  | evalExp ( StringLit(s, pos), vtab, ftab ) =
+  | evalExp (StringLit(s, pos), vtab, ftab ) =
         let val str  = String.explode s
             val exps = map (fn c => CharVal c) str
         in ArrayVal (exps, Char)
         end
 
-  | evalExp ( Var(id, pos), vtab, ftab ) =
+  | evalExp (Var(id, pos), vtab, ftab ) =
         let val res = SymTab.lookup id vtab
         in case res of
              NONE   => raise Error("Unknown variable "^id, pos)
            | SOME m => m
         end
 
-  | evalExp ( Plus(e1, e2, pos), vtab, ftab ) =
+  | evalExp (Plus(e1, e2, pos), vtab, ftab ) =
         let val res1   = evalExp(e1, vtab, ftab)
             val res2   = evalExp(e2, vtab, ftab)
         in  case (res1, res2) of
@@ -145,7 +145,7 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
             | _ => invalidOperands "Plus on non-integral args: " [(Int, Int)] res1 res2 pos
         end
 
-  | evalExp ( Minus(e1, e2, pos), vtab, ftab ) =
+  | evalExp (Minus(e1, e2, pos), vtab, ftab ) =
         let val res1   = evalExp(e1, vtab, ftab)
             val res2   = evalExp(e2, vtab, ftab)
         in  case (res1, res2) of
@@ -153,30 +153,30 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
             | _ => invalidOperands "Minus on non-integral args: " [(Int, Int)] res1 res2 pos
         end
 
-  | evalExp ( Times(e1, e2, pos), vtab, ftab ) =
+  | evalExp (Times(e1, e2, pos), vtab, ftab ) =
         let val res1   = evalExp(e1, vtab, ftab)
             val res2   = evalExp(e2, vtab, ftab)
         in  case (res1, res2) of
               (IntVal n1, IntVal n2) => IntVal (n1*n2)
             | _ => invalidOperands "Times on non-integral args: " [(Int, Int)] res1 res2 pos
         end
-        
-  | evalExp ( Divide(e1, e2, pos), vtab, ftab ) =
+
+  | evalExp (Divide(e1, e2, pos), vtab, ftab ) =
         let val res1   = evalExp(e1, vtab, ftab)
             val res2   = evalExp(e2, vtab, ftab)
         in  case (res1, res2) of
               (IntVal n1, IntVal n2) => IntVal (Int.quot(n1, n2))
             | _ => invalidOperands "Divide on non-integral args: " [(Int, Int)] res1 res2 pos
-        end    
+        end
 
-        
+
   | evalExp (And (e1, e2, pos), vtab, ftab) =
         let val res1 = evalExp(e1, vtab, ftab)
         in
           (case res1 of
               BoolVal b1 =>
                 if b1
-                then 
+                then
                   let val res2 = evalExp(e2, vtab, ftab)
                   in
                     (case res2 of
@@ -210,21 +210,21 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
           )
         end
 
-  | evalExp ( Not(e, pos), vtab, ftab ) =
+  | evalExp (Not(e, pos), vtab, ftab ) =
         let val res   = evalExp(e, vtab, ftab)
         in  case res of
               BoolVal b => if b then BoolVal false else BoolVal true
             | _ => invalidOperand "Boolean Not on non-boolean arg: " Bool res pos
-        end 
+        end
 
-  | evalExp ( Negate(e, pos), vtab, ftab ) =
+  | evalExp (Negate(e, pos), vtab, ftab ) =
         let val res   = evalExp(e, vtab, ftab)
         in case res of
               IntVal n => IntVal (0 - n)
             | _ => invalidOperand "Integer Negation on non-integer arg: " Int res pos
         end
-        
-  | evalExp ( Equal(e1, e2, pos), vtab, ftab ) =
+
+  | evalExp (Equal(e1, e2, pos), vtab, ftab ) =
         let val r1 = evalExp(e1, vtab, ftab)
             val r2 = evalExp(e2, vtab, ftab)
         in  case (r1, r2) of
@@ -234,18 +234,18 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
             | (_, _) => invalidOperands "Invalid equality operand types" [(Int, Int), (Bool, Bool), (Char, Char)] r1 r2 pos
         end
 
-  | evalExp ( Less(e1, e2, pos), vtab, ftab ) =
+  | evalExp (Less(e1, e2, pos), vtab, ftab ) =
         let val r1 = evalExp(e1, vtab, ftab)
             val r2 = evalExp(e2, vtab, ftab)
         in  case (r1, r2) of
               (IntVal  n1,    IntVal  n2  ) => BoolVal (n1 < n2)
             | (BoolVal false, BoolVal true) => BoolVal true
             | (BoolVal _,     BoolVal _   ) => BoolVal false
-            | (CharVal c1,    CharVal c2  ) => BoolVal ( Char.ord(c1) < Char.ord(c2) )
+            | (CharVal c1,    CharVal c2  ) => BoolVal (Char.ord(c1) < Char.ord(c2) )
             | (_, _) => invalidOperands "Invalid less-than operand types" [(Int, Int), (Bool, Bool), (Char, Char)] r1 r2 pos
         end
 
-  | evalExp ( If(e1, e2, e3, pos), vtab, ftab ) =
+  | evalExp (If(e1, e2, e3, pos), vtab, ftab ) =
         let val cond = evalExp(e1, vtab, ftab)
         in case cond of
               BoolVal true  => evalExp(e2, vtab, ftab)
@@ -253,29 +253,29 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
            |  other         => raise Error("If condition is not a boolean", pos)
         end
 
-  | evalExp ( Apply(fid, args, pos), vtab, ftab ) =
+  | evalExp (Apply(fid, args, pos), vtab, ftab ) =
         let val evargs = map (fn e => evalExp(e, vtab, ftab)) args
         in case SymTab.lookup fid ftab of
                SOME f => callFunWithVtable(f, evargs, SymTab.empty(), ftab, pos)
              | NONE   => raise Error("Call to unkwn function "^fid, pos)
         end
 
-  | evalExp ( Let(Dec(id,e,p), exp, pos), vtab, ftab ) =
+  | evalExp (Let(Dec(id,e,p), exp, pos), vtab, ftab ) =
         let val res   = evalExp(e, vtab, ftab)
             val nvtab = SymTab.bind id res vtab
         in  evalExp(exp, nvtab, ftab)
         end
 
-  | evalExp ( Index(id, e, tp, pos), vtab, ftab ) =
+  | evalExp (Index(id, e, tp, pos), vtab, ftab ) =
         let val indv= evalExp(e, vtab, ftab)
             val arr = SymTab.lookup id vtab
         in case (arr, indv) of
              (NONE, _)   => raise Error("Unknown array "^id, pos)
            | (SOME (ArrayVal(lst, tp)), IntVal ind) =>
                 let val len = List.length(lst)
-                in if( len > ind andalso ind >= 0 )
+                in if(len > ind andalso ind >= 0 )
                    then List.nth(lst,ind)
-                   else raise Error( "Array index out of bounds: array length: "^
+                   else raise Error("Array index out of bounds: array length: "^
                                      Int.toString(len)^", index: "^Int.toString(ind), pos )
                 end
            | (SOME m, IntVal _) => raise Error("Indexing error: " ^ (ppVal 0 m) ^ " is not an array", pos)
@@ -283,7 +283,7 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
 
         end
 
-  | evalExp ( Iota (e, pos), vtab, ftab ) =
+  | evalExp (Iota (e, pos), vtab, ftab ) =
         let val iotv= evalExp(e, vtab, ftab)
             fun range x ys = if (0 > x) then ys else range (x - 1) (x::ys)
         in case (iotv) of
@@ -291,7 +291,7 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
            | _ => raise Fail "Iota function on non-integer arg"
         end
 
-  | evalExp ( Map (farg, arrexp, _, _, pos), vtab, ftab ) =
+  | evalExp (Map (farg, arrexp, _, _, pos), vtab, ftab ) =
       let fun f(x) = evalFunArg(farg, vtab, ftab, pos, [x])
           val t = rtpFunArg(farg, ftab, pos)
           val mapv = evalExp(arrexp, vtab, ftab)
@@ -300,7 +300,7 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
           | _ => raise Fail "Not an array"
       end
 
-  | evalExp ( Reduce (farg, ne, arrexp, tp, pos), vtab, ftab ) =
+  | evalExp (Reduce (farg, ne, arrexp, tp, pos), vtab, ftab ) =
       let fun f(a,b) = evalFunArg(farg, vtab, ftab, pos, [a,b])
           val e = evalExp(ne, vtab, ftab)
           val redv = evalExp(arrexp, vtab, ftab)
@@ -309,7 +309,7 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
           | _ => raise Fail "arrexp not an array"
       end
 
-  | evalExp ( Read (t,p), vtab, ftab ) =
+  | evalExp (Read (t,p), vtab, ftab ) =
         let val str =
                 case TextIO.inputLine(TextIO.stdIn) of
                     SOME line => line
@@ -323,7 +323,7 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
                     end
            | Bool => let val v = Int.fromString(str) (* Bool.fromString(str) *)
                      in case v of
-                            SOME b    => if( b=0 ) then BoolVal false else BoolVal true
+                            SOME b    => if(b=0 ) then BoolVal false else BoolVal true
                           | otherwise => raise Error("read(bool) Failed; 0==false, 1==true! ", p)
                      end
            | Char => let val v = Char.fromCString(str)
@@ -334,13 +334,13 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
            | otherwise => raise Error("Read operation is valid only on basic types ", p)
         end
 
-  | evalExp ( Write(exp,t,p), vtab, ftab ) =
+  | evalExp (Write(exp,t,p), vtab, ftab ) =
         let val v  = evalExp(exp, vtab, ftab)
             val () =
             case v of
-              IntVal n => print( (Int.toString n) ^ " " )
-            | BoolVal b => let val res = if(b) then "True " else "False " in print( res ) end
-            | CharVal c => print( (Char.toCString c)^" " )
+              IntVal n => print((Int.toString n) ^ " " )
+            | BoolVal b => let val res = if(b) then "True " else "False " in print(res ) end
+            | CharVal c => print((Char.toCString c)^" " )
             | ArrayVal (a, Char) =>
               let fun mapfun e =
                       case e of
@@ -348,7 +348,7 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
                         | otherwise => raise Error("Write argument " ^
                                                    ppVal 0 v ^
                                                    " should have been evaluated to string", p)
-              in print( String.implode (map mapfun a) )
+              in print(String.implode (map mapfun a) )
               end
             | otherwise => raise Error("Write can be called only on basic and array(char) types ", p)
         in v
@@ -356,7 +356,7 @@ fun evalExp ( Constant (v,_), vtab, ftab ) = v
 
 (* finds the return type of a function argument *)
 and rtpFunArg (FunName fid, ftab, callpos) =
-    ( case SymTab.lookup fid ftab of
+    (case SymTab.lookup fid ftab of
         NONE   => raise Error("Call to unknown function "^fid, callpos)
       | SOME (FunDec (_, rettype, _, _, _)) => rettype
     )
@@ -364,7 +364,7 @@ and rtpFunArg (FunName fid, ftab, callpos) =
 
 (* evalFunArg takes as argument a FunArg, a vtable, an ftable, the
 position where the call is performed, and the list of actual arguments.
-It returns a pair of two values: the result of calling the (lambda) function, 
+It returns a pair of two values: the result of calling the (lambda) function,
 and the return type of the FunArg.
  *)
 and evalFunArg (FunName fid, vtab, ftab, callpos, aargs) =
@@ -376,7 +376,7 @@ and evalFunArg (FunName fid, vtab, ftab, callpos, aargs) =
       | SOME f => callFunWithVtable(f, aargs, SymTab.empty(), ftab, callpos)
     end
   | evalFunArg (Lambda (rettype, params, body, fpos), vtab, ftab, callpos, aargs) =
-    callFunWithVtable ( FunDec ("<anonymous>", rettype, params, body, fpos)
+    callFunWithVtable (FunDec ("<anonymous>", rettype, params, body, fpos)
                       , aargs, vtab, ftab, callpos )
 
 (* Interpreter for Fasto function calls:

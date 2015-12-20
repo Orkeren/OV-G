@@ -39,15 +39,15 @@ val stringTable = ref []
 
 (* Building a string in the heap, including initialisation code *)
 fun buildString (label, str)
-  = let val data = [ Mips.ALIGN "2"   (* means: word-align *)
+  = let val data = [Mips.ALIGN "2"   (* means: word-align *)
                    , Mips.LABEL label (* pointer *)
                    , Mips.SPACE "4"   (* size(int) *)
                    , Mips.ASCIIZ str]
         val initR = label ^ "_init"
         val addrR = label ^ "_addr"
-        val initcode = [ Mips.LA(addrR, label)
+        val initcode = [Mips.LA(addrR, label)
                        , Mips.LI(initR, makeConst (String.size str))
-                       , Mips.SW(initR, addrR, makeConst 0) ]
+                       , Mips.SW(initR, addrR, makeConst 0)]
     in (initcode, data)
     end
 
@@ -87,7 +87,7 @@ fun mipsLoad elem_size = case elem_size of
           val tmp_reg  = newName "tmp_reg"
           val err_lab  = newName "error_lab"
           val safe_lab = newName "safe_lab"
-      in [ Mips.LW(size_reg, arr_beg, "0")
+      in [Mips.LW(size_reg, arr_beg, "0")
          , Mips.BGEZ(ind_reg, safe_lab)
          , Mips.LABEL(err_lab)
          , Mips.LI("5", makeConst line)
@@ -95,7 +95,7 @@ fun mipsLoad elem_size = case elem_size of
          , Mips.LABEL(safe_lab)
          , Mips.SUB(tmp_reg, ind_reg, size_reg)
          , Mips.BGEZ(tmp_reg, err_lab)
-         ]
+        ]
       end
 
 (* dynalloc(size_reg, place, ty) generates code for allocating arrays of heap
@@ -112,24 +112,24 @@ fun dynalloc (size_reg : string,
     let val tmp_reg = newName "tmp"
 
         (* Use old HP as allocation address. *)
-        val code1 = [ Mips.MOVE (place, HP) ]
+        val code1 = [Mips.MOVE (place, HP)]
 
         (* For char/bool: Align address to 4-byte boundary by rounding up. *)
         (*                (By adding 3 and rounding down using SRA/SLL.) *)
         (* For int and arrays: Multiply logical size by 4, no alignment. *)
         val code2 =
             if ty = Char orelse ty = Bool
-            then [ Mips.ADDI(tmp_reg, size_reg, "3")
+            then [Mips.ADDI(tmp_reg, size_reg, "3")
                  , Mips.SRA (tmp_reg, tmp_reg, "2")
-                 , Mips.SLL (tmp_reg, tmp_reg, "2") ]
-            else [ Mips.SLL (tmp_reg, size_reg, "2") ]
+                 , Mips.SLL (tmp_reg, tmp_reg, "2")]
+            else [Mips.SLL (tmp_reg, size_reg, "2")]
 
         (* Make space for array size (+4). Increase HP. *)
         (* Save size of allocation in header. *)
         val code3 =
-            [ Mips.ADDI (tmp_reg, tmp_reg, "4")
+            [Mips.ADDI (tmp_reg, tmp_reg, "4")
             , Mips.ADD (HP, HP, tmp_reg)
-            , Mips.SW (size_reg, place, "0") ]
+            , Mips.SW (size_reg, place, "0")]
 
     in code1 @ code2 @ code3
     end
@@ -151,7 +151,7 @@ fun applyRegs(fid: string,
       if regs_num > maxCaller - minReg
       then raise Error("Number of arguments passed to "^fid^
                        " exceeds number of caller registers", pos)
-      else move_code @ [ Mips.JAL(fid,caller_regs), Mips.MOVE(place, "2") ]
+      else move_code @ [Mips.JAL(fid,caller_regs), Mips.MOVE(place, "2")]
   end
 
 (* Compile 'e' under bindings 'vtable', putting the result in its 'place'. *)
@@ -161,15 +161,15 @@ fun compileExp e vtable place =
       if n < 0 then
           compileExp (Negate (Constant (IntVal (~n), pos), pos)) vtable place
       else if n < 32768 then
-          [ Mips.LI (place, makeConst n) ]
+          [Mips.LI (place, makeConst n)]
       else
-        [ Mips.LUI (place, makeConst (n div 65536))
-        , Mips.ORI (place, place, makeConst (n mod 65536)) ]
-  | Constant (CharVal c, pos) => [ Mips.LI (place, makeConst (ord c)) ]
+        [Mips.LUI (place, makeConst (n div 65536))
+        , Mips.ORI (place, place, makeConst (n mod 65536))]
+  | Constant (CharVal c, pos) => [Mips.LI (place, makeConst (ord c))]
 
   | Constant (BoolVal b, pos) =>  if b
-                                  then [ Mips.LI (place, makeConst 1) ]
-                                  else  [ Mips.LI (place, makeConst 0) ]
+                                  then [Mips.LI (place, makeConst 1)]
+                                  else  [Mips.LI (place, makeConst 0)]
 
   (* Create/return a label here, collect all string literals of the program
      (in stringTable), and create them in the data section before the heap
@@ -180,8 +180,8 @@ fun compileExp e vtable place =
         val normalChars = String.translate translateC strLit ^ "__str__"
         val label = newName (String.substring (normalChars, 0, 7))
         val ()    = stringTable := (label, strLit)::(!stringTable)
-    in [ Mips.LA (place, label),
-         Mips.COMMENT (label^": string \""^ String.toCString strLit ^ "\"") ]
+    in [Mips.LA (place, label),
+         Mips.COMMENT (label^": string \""^ String.toCString strLit ^ "\"")]
     end
 
   | Constant (ArrayVal (vs, tp), pos) =>
@@ -198,9 +198,9 @@ fun compileExp e vtable place =
 
         (* Store size of literal in size_reg, dynamically allocate that. *)
         (* Let addr_reg contain the address for the first array element. *)
-        val header  = [ Mips.LI (size_reg, makeConst (length elems)) ]  @
+        val header  = [Mips.LI (size_reg, makeConst (length elems))]  @
                       dynalloc (size_reg, place, tp) @
-                      [ Mips.ADDI (addr_reg, place, "4") ]
+                      [Mips.ADDI (addr_reg, place, "4")]
 
         fun compileElem elem_exp =
             let val elem_code = compileExp elem_exp vtable tmp_reg
@@ -208,9 +208,9 @@ fun compileExp e vtable place =
                                     One => Mips.SB
                                   | Four => Mips.SW
             in elem_code @
-               [ storeInst (tmp_reg, addr_reg, "0")
+               [storeInst (tmp_reg, addr_reg, "0")
                , Mips.ADDI (addr_reg, addr_reg,
-                            makeConst (elemSizeToInt elem_size)) ]
+                            makeConst (elemSizeToInt elem_size))]
             end
 
         val elems_code = List.concat (map compileElem elems)
@@ -263,18 +263,20 @@ fun compileExp e vtable place =
           Mips.LI (place,"0"),
           Mips.LABEL trueLabel]
       end
+
   | Negate (e', pos) =>
-      let val t1 = newName "negate"
+      let val t1 = newName "negate_E"
           val code1 = compileExp e' vtable t1
-      in  code1 @
-          [Mips.XORI (place, t1, "0x00000000")]
+      in  code1 @ [Mips.SUB (place, "0", t1)]
       end
+
 
   | Let (dec, e1, pos) =>
       let val (code1, vtable1) = compileDec dec vtable
           val code2 = compileExp e1 vtable1 place
       in code1 @ code2
       end
+
   | If (e1, e2, e3, pos) =>
       let val thenLabel = newName "then"
           val elseLabel = newName "else"
@@ -283,9 +285,10 @@ fun compileExp e vtable place =
           val code2 = compileExp e2 vtable place
           val code3 = compileExp e3 vtable place
       in code1 @ [Mips.LABEL thenLabel] @ code2  @
-         [ Mips.J endLabel, Mips.LABEL elseLabel ] @
+         [Mips.J endLabel, Mips.LABEL elseLabel] @
          code3 @ [Mips.LABEL endLabel]
       end
+
   | Apply (f, args, pos) =>
       let
           (* Convention: args in regs (2..15), result in reg 2 *)
@@ -306,18 +309,18 @@ fun compileExp e vtable place =
   *)
   | Read(tp, pos) => (
       case tp of
-        Int  => [ Mips.JAL ("getint",["2"]),
+        Int  => [Mips.JAL ("getint",["2"]),
                   Mips.MOVE(place,"2")
-                ]
-      | Char => [ Mips.JAL ("getchar", ["2"]),
+               ]
+      | Char => [Mips.JAL ("getchar", ["2"]),
                   Mips.MOVE(place, "2")
-                ]
+               ]
       | Bool =>
           let val tl = newName "true_lab"
               val fl = newName "false_lab"
               val ml = newName "merge_lab"
               val v  = newName "bool_var"
-          in [ Mips.JAL ("getint", ["2"])
+          in [Mips.JAL ("getint", ["2"])
              , Mips.MOVE(v, "2")
              , Mips.BEQ (v,"0",fl)
              , Mips.J tl
@@ -327,30 +330,30 @@ fun compileExp e vtable place =
              , Mips.LABEL tl
              , Mips.LI (place, "1")
              , Mips.J ml
-             , Mips.LABEL ml ]
+             , Mips.LABEL ml]
           end
       | _ => raise Error("Read on an incompatible type: " ^ ppType tp, pos)
     )
   | Write(e, tp, pos) =>
     let val tmp = newName "tmp"
-        val codeexp = compileExp e vtable tmp @ [ Mips.MOVE (place, tmp) ]
+        val codeexp = compileExp e vtable tmp @ [Mips.MOVE (place, tmp)]
       in case tp of
-           Int  => codeexp @ [ Mips.MOVE("2",place), Mips.JAL("putint", ["2"]) ]
-         | Char => codeexp @ [ Mips.MOVE("2",place), Mips.JAL("putchar",["2"]) ]
+           Int  => codeexp @ [Mips.MOVE("2",place), Mips.JAL("putint", ["2"])]
+         | Char => codeexp @ [Mips.MOVE("2",place), Mips.JAL("putchar",["2"])]
          | Bool =>
               let
                 val tlab = newName "wBoolF"
               in
                 codeexp @
-                [ Mips.LA ("2","_true")
+                [Mips.LA ("2","_true")
                 , Mips.BNE (place,"0",tlab)
                 , Mips.LA ("2","_false")
                 , Mips.LABEL tlab
-                , Mips.JAL("putstring", ["2"]) ]
+                , Mips.JAL("putstring", ["2"])]
               end
          | Array Char =>
-             codeexp @ [ Mips.MOVE ("2", tmp)
-                       , Mips.JAL("putstring", ["2"]) ]
+             codeexp @ [Mips.MOVE ("2", tmp)
+                       , Mips.JAL("putstring", ["2"])]
 
          | Array elem_type => (* for Array(Int) and Array(Array(Int)) *)
              let val arr_reg   = newName "arr_reg"
@@ -360,18 +363,18 @@ fun compileExp e vtable place =
                  val loop_beg  = newName "loop_beg"
                  val loop_end  = newName "loop_end"
 
-                 val header1 = [ Mips.LW(size_reg, place, "0")
+                 val header1 = [Mips.LW(size_reg, place, "0")
                                , Mips.ADDI(arr_reg, place, "4")
                                , Mips.MOVE(i_reg,"0")
                                , Mips.LABEL(loop_beg)
                                , Mips.SUB(tmp_reg,i_reg,size_reg)
-                               , Mips.BGEZ(tmp_reg, loop_end) ]
+                               , Mips.BGEZ(tmp_reg, loop_end)]
 
                  val header2 = case getElemSize elem_type of
-                                   One => [ Mips.LB(tmp_reg,arr_reg,"0")
-                                          , Mips.ADDI(arr_reg,arr_reg,"1") ]
-                                 | Four => [ Mips.LW(tmp_reg,arr_reg,"0")
-                                           , Mips.ADDI(arr_reg,arr_reg,"4") ]
+                                   One => [Mips.LB(tmp_reg,arr_reg,"0")
+                                          , Mips.ADDI(arr_reg,arr_reg,"1")]
+                                 | Four => [Mips.LW(tmp_reg,arr_reg,"0")
+                                           , Mips.ADDI(arr_reg,arr_reg,"4")]
 
                  (* create a fake Fasto node corresponding to the array elem
                  and call compileExp recursively to generate code to print the
@@ -382,9 +385,9 @@ fun compileExp e vtable place =
                  val elem_code = compileExp fastoexp new_vtab tmp_reg
 
              in codeexp @ header1 @ header2 @ elem_code @
-                [ Mips.ADDI(i_reg, i_reg, "1")
+                [Mips.ADDI(i_reg, i_reg, "1")
                 , Mips.J loop_beg
-                , Mips.LABEL loop_end ]
+                , Mips.LABEL loop_end]
              end
       end
 
@@ -396,10 +399,10 @@ fun compileExp e vtable place =
           val code2 = compileExp e2 vtable t2
           val falseLabel = newName "false"
       in  code1 @ code2 @
-          [ Mips.LI (place,"0")
+          [Mips.LI (place,"0")
           , Mips.BNE (t1,t2,falseLabel)
           , Mips.LI (place,"1")
-          , Mips.LABEL falseLabel ]
+          , Mips.LABEL falseLabel]
       end
   | Less (e1, e2, pos) =>
       let val t1 = newName"lt_L"
@@ -454,7 +457,7 @@ fun compileExp e vtable place =
               case SymTab.lookup arr_name vtable of
                   NONE => raise Error ("Name "^arr_name^" not found", pos)
                 | SOME reg_name => reg_name
-          val init_code = [ Mips.ADDI(arr_reg, arr_beg, "4") ]
+          val init_code = [Mips.ADDI(arr_reg, arr_beg, "4")]
 
           (* code to check bounds *)
           val check_code = checkBounds(arr_beg, ind_reg, pos)
@@ -463,11 +466,11 @@ fun compileExp e vtable place =
           (* array_var += index; place = *array_var *)
           val load_code =
               if ty = Char orelse ty = Bool
-              then [ Mips.ADD(arr_reg, arr_reg, ind_reg)
-                   , Mips.LB(place, arr_reg, "0") ]
-              else [ Mips.SLL(ind_reg, ind_reg, "2")
+              then [Mips.ADD(arr_reg, arr_reg, ind_reg)
+                   , Mips.LB(place, arr_reg, "0")]
+              else [Mips.SLL(ind_reg, ind_reg, "2")
                    , Mips.ADD(arr_reg, arr_reg, ind_reg)
-                   , Mips.LW(place, arr_reg, "0") ]
+                   , Mips.LW(place, arr_reg, "0")]
 
       in ind_code @ init_code @ check_code @ load_code
       end
@@ -486,18 +489,18 @@ fun compileExp e vtable place =
              safe_lab: ...
           *)
           val safe_lab = newName "safe_lab"
-          val checksize = [ Mips.ADDI (size_reg, size_reg, "-1")
+          val checksize = [Mips.ADDI (size_reg, size_reg, "-1")
                           , Mips.BGEZ (size_reg, safe_lab)
                           , Mips.LI ("5", makeConst line)
                           , Mips.J "_IllegalArrSizeError_"
                           , Mips.LABEL (safe_lab)
                           , Mips.ADDI (size_reg, size_reg, "1")
-                          ]
+                         ]
 
           val addr_reg = newName "addr_reg"
           val i_reg = newName "i_reg"
-          val init_regs = [ Mips.ADDI (addr_reg, place, "4")
-                          , Mips.MOVE (i_reg, "0") ]
+          val init_regs = [Mips.ADDI (addr_reg, place, "4")
+                          , Mips.MOVE (i_reg, "0")]
           (* addr_reg is now the position of the first array element. *)
 
           (* Run a loop.  Keep jumping back to loop_beg until it is not the
@@ -505,18 +508,18 @@ fun compileExp e vtable place =
           val loop_beg = newName "loop_beg"
           val loop_end = newName "loop_end"
           val tmp_reg = newName "tmp_reg"
-          val loop_header = [ Mips.LABEL (loop_beg)
+          val loop_header = [Mips.LABEL (loop_beg)
                             , Mips.SUB (tmp_reg, i_reg, size_reg)
-                            , Mips.BGEZ (tmp_reg, loop_end) ]
+                            , Mips.BGEZ (tmp_reg, loop_end)]
 
           (* iota is just 'arr[i] = i'.  arr[i] is addr_reg. *)
-          val loop_iota = [ Mips.SW (i_reg, addr_reg, "0") ]
+          val loop_iota = [Mips.SW (i_reg, addr_reg, "0")]
 
-          val loop_footer = [ Mips.ADDI (addr_reg, addr_reg, "4")
+          val loop_footer = [Mips.ADDI (addr_reg, addr_reg, "4")
                             , Mips.ADDI (i_reg, i_reg, "1")
                             , Mips.J loop_beg
                             , Mips.LABEL loop_end
-                            ]
+                           ]
       in n_code
          @ checksize
          @ dynalloc (size_reg, place, Int)
@@ -656,7 +659,7 @@ fun compile funs =
        Mips.SYSCALL,
        Mips.JR (RA,[])]
     @ (* putchar *)
-      [ Mips.LABEL "putchar",
+      [Mips.LABEL "putchar",
         Mips.ADDI(SP,SP,"-8"),   (* make space for 2 registers on the stack *)
         Mips.SW ("2",SP,"0"),    (* save registers $2 and $4 to stack *)
         Mips.SW ("4",SP,"4"),
@@ -670,9 +673,9 @@ fun compile funs =
         Mips.LW ("4",SP,"4"),
         Mips.ADDI(SP,SP,"8"),    (* free stack space again *)
         Mips.JR (RA,[])
-      ]
+     ]
     @ (* getchar *)
-      [ Mips.LABEL "getchar",
+      [Mips.LABEL "getchar",
         Mips.ADDI(SP,SP,"-8"),   (* make space for 2 registers on the stack *)
         Mips.SW ("4",SP,"0"),    (* save registers $4 and $5 to stack *)
         Mips.SW ("5",SP,"4"),
@@ -687,9 +690,9 @@ fun compile funs =
         Mips.LW ("5", SP, "4"),
         Mips.ADDI(SP,SP,"8"),    (* free stack space again *)
         Mips.JR (RA,[])
-      ]
+     ]
     @ (* putstring *)
-      [ Mips.LABEL "putstring",
+      [Mips.LABEL "putstring",
         Mips.ADDI(SP,  SP, "-16"),   (* make space on stack for registers *)
         Mips.SW  ("2", SP, "0"),     (* save registers $2,$4,$5,$6 to stack *)
         Mips.SW  ("4", SP, "4"),
@@ -713,7 +716,7 @@ fun compile funs =
         Mips.LW ("6", SP, "12"),
         Mips.ADDI(SP, SP, "16"),     (* free stack space again *)
         Mips.JR (RA,[])
-      ]
+     ]
     @ (* fixed error code for indexing errors *)
       [Mips.LABEL "_IllegalArrSizeError_",
        Mips.LA ("4","_IllegalArrSizeString_"),
