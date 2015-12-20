@@ -243,6 +243,9 @@ and checkExp ftab vtab (exp : In.Exp)
     | In.Reduce (f, n_exp, arr_exp, _, pos)
       => let val (t1, e1_dec) = checkExp ftab vtab n_exp
              val (t2, e2_dec) = checkExp ftab vtab arr_exp
+             val t2 = case t2 of
+                  Array(x) => x
+                | _ => raise Error ("arr_exp not array", pos)
              val (f_name, tr, ts) = checkFunArg (f, vtab, ftab, pos)
              val t3 = List.nth(ts, 0)
              val t4 = List.nth(ts, 1)

@@ -537,8 +537,8 @@ fun compileExp e vtable place =
         val addr_code = compileExp arr_exp vtable addr_reg
         val size_reg  = newName "size_reg"
         val size_code = [Mips.LW(size_reg, addr_reg, " 0")]
-        val res_reg = newName "res_reg"
-        val i_reg = newName "i_reg"
+        val res_reg   = newName "res_reg"
+        val i_reg     = newName "i_reg"
         val init_regs = [Mips.ADDI (res_reg, place, "4"),
                            Mips.ADDI (addr_reg, addr_reg, "4"),
                            Mips.MOVE (i_reg, "0")]
@@ -547,7 +547,7 @@ fun compileExp e vtable place =
         val loop_end  = newName "loop_end"
         val tmp_reg   = newName "tmp_reg"
         val tmp_reg'  = newName "tmp_reg'"
-        val tmp_reg''  = newName "tmp_reg''"
+        val tmp_reg'' = newName "tmp_reg''"
 
         val loop_header = [Mips.LABEL (loop_beg),
                            Mips.SUB (tmp_reg, i_reg, size_reg),
@@ -585,7 +585,56 @@ fun compileExp e vtable place =
 
   (* reduce(f, acc, {x1, x2, ...}) = f(..., f(x2, f(x1, acc))) *)
   | Reduce (binop, acc_exp, arr_exp, tp, pos) =>
-    raise Fail "Unimplemented feature reduce"
+    let val elem_size = getElemSize tp
+        val acc_reg   = newName "acc_reg"
+        val acc_code  = compileExp acc_exp vtable acc_reg
+        val addr_reg  = newName "addr_reg"
+        val addr_code = compileExp arr_exp vtable addr_reg
+        val size_reg  = newName "size_reg"
+        val size_code = [Mips.LW(size_reg, addr_reg, " 0")]
+
+        val loop_beg  = newName "loop_beg"
+        val loop_end  = newName "loop_end"
+        val tmp_reg   = newName "tmp_reg"
+        val tmp_reg'  = newName "tmp_reg'"
+
+        val i_reg     = newName "i_reg"
+        val init_regs = [Mips.ADDI (addr_reg, addr_reg, "4"),
+                         Mips.MOVE (i_reg, "0")]
+
+
+        val loop_header = [Mips.LABEL (loop_beg),
+                           Mips.SUB (tmp_reg, i_reg, size_reg),
+                           Mips.BGEZ (tmp_reg, loop_end)]
+
+        val load_arg = [mipsLoad elem_size (tmp_reg', addr_reg, "0")]
+
+        val loop_reduce = case binop of
+          FunName binop => applyRegs(binop, [acc_reg, tmp_reg'], acc_reg , pos)
+        | Lambda(_, params, body, _) =>
+            let
+              val vtable' = (case params of
+                        Param(p_name, p_type) :: Param(p_name', _) :: [] => SymTab.bind p_name tmp_reg' (SymTab.bind p_name' acc_reg vtable)
+                      | _ => raise Error ("Error no paramater name",pos))
+            in compileExp body vtable' acc_reg
+            end
+
+        val loop_footer = [Mips.ADDI (addr_reg, addr_reg, makeConst (elemSizeToInt elem_size)),
+                           Mips.ADDI (i_reg, i_reg, "1"),
+                           Mips.J loop_beg,
+                           Mips.LABEL loop_end,
+                           Mips.MOVE (place, acc_reg)
+                           ]
+
+        in addr_code
+          @ size_code
+          @ dynalloc (size_reg, place, tp)
+          @ init_regs
+          @ loop_header
+          @ load_arg
+          @ loop_reduce
+          @ loop_footer
+        end
 
 (* compile condition *)
 and compileCond c vtable tlab flab =
